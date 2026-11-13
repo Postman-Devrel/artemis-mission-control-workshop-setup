@@ -1,0 +1,11 @@
+{
+  "name": "Agent Workshop",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "remoteUser": "node",
+  "containerEnv": {
+    "DISABLE_AUTOUPDATER": "1"
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh"
+}
