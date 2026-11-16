@@ -4,8 +4,16 @@
     "dockerfile": "Dockerfile"
   },
   "remoteUser": "node",
+  "hostRequirements": {
+    "cpus": 2
+  },
   "containerEnv": {
     "DISABLE_AUTOUPDATER": "1"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-vscode.live-server"]
+    }
   },
   "postCreateCommand": "bash .devcontainer/post-create.sh"
 }
