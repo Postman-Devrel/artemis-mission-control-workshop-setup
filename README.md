@@ -8,7 +8,7 @@ This page only covers launching and configuring your environment. After that, fo
 
 Do these three steps in order.
 
-1. Fill in the registration form: [registration form link]. Your instructor shares it.
+1. Fill in the registration form: [[registration form link](https://docs.google.com/forms/d/e/1FAIpQLSeixKe-IDm92o8VK8xXAoDkpw1fqsZPA15qyUBtybzR-ivYvg/viewform)]. Your instructor shares it.
 2. Accept the GitHub invitation at https://github.com/postman-devrel-workshops/artemis-mission-control-workshop-setup/invitations. It also arrives by email.
 3. Then create your codespace (next section).
 
