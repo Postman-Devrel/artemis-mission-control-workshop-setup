@@ -12,7 +12,12 @@
   },
   "customizations": {
     "vscode": {
-      "extensions": ["ms-vscode.live-server"]
+      "extensions": [
+        "ms-vscode.live-server"
+      ],
+      "settings": {
+        "livePreview.openPreviewTarget": "External Browser"
+      }
     }
   },
   "postCreateCommand": "bash .devcontainer/post-create.sh"
