@@ -74,7 +74,7 @@ read -s ARTEMIS_API_KEY && export ARTEMIS_API_KEY
 claude --continue
 ```
 
-**Dashboard.** To view `mission-dashboard.html`, right-click it in the Explorer and choose **Show Preview**. A codespace has no local browser, so `open` does not work.
+**Dashboard.** To view `mission-dashboard.html`, right-click it in the Explorer and choose **Show Preview**. It opens in a new browser tab: if your browser blocks it, allow pop-ups for this page. A codespace has no local browser, so `open` does not work.
 
 ## 6. If your codespace stopped
 
