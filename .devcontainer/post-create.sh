@@ -34,7 +34,7 @@ if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
 else
   echo "ANTHROPIC_API_KEY is not set."
   echo "  The workshop key is only injected for collaborators who accepted the repo invitation."
-  echo "  Accept it at https://github.com/<owner>/<repo>/invitations, then create (or rebuild) this codespace."
+  echo "  Accept it at https://github.com/${GITHUB_REPOSITORY:-<owner>/<repo>}/invitations, then create (or rebuild) this codespace."
   echo "  Otherwise, run: claude and log in manually."
 fi
 
