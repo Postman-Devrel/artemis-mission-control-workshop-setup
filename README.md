@@ -52,14 +52,7 @@ The Postman plugin is already installed. If the module tells you to run `npx @po
 
 Open the LiftOff module in your own browser, next to the codespace: [LiftOff module link]
 
-Three tips for working in a codespace.
-
-**Folder.** Run the module's commands from the codespace terminal. The module creates an `artemis-mission-control-agent` folder inside this repo. That is expected. Always go into it before you start Claude, especially in a new terminal:
-
-```bash
-cd artemis-mission-control-agent
-claude
-```
+Two tips for working in a codespace.
 
 **Artemis API key.** When the module asks where to keep your key, choose **Option B (Env var)**. Quit Claude with `/exit` first, then run:
 
@@ -75,7 +68,6 @@ claude --continue
 Codespaces stop after a period of inactivity. Reopen yours from https://github.com/codespaces, then:
 
 ```bash
-cd artemis-mission-control-agent
 read -s ARTEMIS_API_KEY && export ARTEMIS_API_KEY
 claude --continue
 ```
@@ -94,4 +86,4 @@ Delete your codespace at https://github.com/codespaces.
 - **`./start` says the key was not accepted:** generate a new Postman API key and run the command with it.
 - **Claude hangs, then fails with 401:** run `./start` again. Do not type the gateway settings by hand: a single wrong character makes Claude retry silently before failing.
 - **Postman says "not logged in":** run `./start` again.
-- **Validation says no workspace found:** you started `claude` from the wrong folder. Run `cd artemis-mission-control-agent` and try again.
+- **Validation says no workspace found:** you started `claude` from the wrong folder. Go back to the folder where you started the module and try again.
