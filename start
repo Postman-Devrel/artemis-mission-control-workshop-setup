@@ -20,7 +20,6 @@ CLAIM_PATH="/api/workshop/claim/"
 VALIDATION_MODEL="claude-haiku-5-5"
 CLAIM_TIMEOUT=20       # seconds, claim call
 VALIDATION_TIMEOUT=40  # seconds, gateway test call
-MODULE_DIR="artemis-mission-control-agent"
 SETTINGS_FILE="${HOME}/.claude/settings.json"
 
 die() { printf '\n✗ %s\n' "$*" >&2; exit 1; }
@@ -77,11 +76,16 @@ unset CLAIM_BODY
 if [ "$claim_status" != "200" ]; then
   code="$(jq -r '.code // empty' "$WORK_DIR/claim.json" 2>/dev/null || true)"
   retry_after="$(awk 'tolower($1)=="retry-after:" {gsub("\r",""); print $2}' "$WORK_DIR/claim.headers" 2>/dev/null || true)"
+  # Not our JSON API (CDN/HTML error page, proxy, protection): never show the raw body.
+  if [ "$claim_status" != "000" ] && [ -z "$code" ]; then
+    die "Unexpected response from the workshop server (HTTP ${claim_status}). Check the event name in the command, and that it was copied from the workshop page. If it persists, tell your instructor."
+  fi
   case "${claim_status}:${code}" in
     000:*) die "Could not reach the workshop server at ${LIFTOFF_URL}. Check your connection and try again. If it keeps failing, tell your instructor." ;;
     400:*) die "The request was rejected as malformed. Copy the command again from the workshop page." ;;
-    401:*) die "Postman did not accept your API key. Generate a new one (postman.com > Settings > API keys), then run the command again." ;;
-    404:*) die "Unknown workshop \"$EVENT\". Copy the command again from the workshop page." ;;
+    401:invalid_key) die "Postman did not accept your API key. Generate a new one (postman.com > Settings > API keys), then run the command again." ;;
+    401:*) die "The workshop server refused the request (HTTP 401). Tell your instructor." ;;
+    404:unknown_event) die "Unknown workshop \"$EVENT\". Copy the command again from the workshop page." ;;
     403:event_closed) die "This workshop is not open. Ask your instructor." ;;
     403:*) die "You are not registered for this workshop, or you reached the limit for it. Register on the workshop page first (with the same Postman API key), then run the command again." ;;
     429:*) die "Too many attempts. Wait ${retry_after:-a minute} seconds and try again." ;;
@@ -160,10 +164,10 @@ else
 fi
 unset POSTMAN_API_KEY
 
-# --- 6. Next steps -----------------------------------------------------------
+# --- 6. Who is connected ------------------------------------------------------
 echo
-info "All set. Start Claude Code from the module folder, not from the repo root:"
+info "Connected to Postman as:"
+postman whoami 2>&1 || info "(could not read the Postman identity; run: postman whoami)"
 echo
-info "    cd ${MODULE_DIR} && claude"
-[ -d "$MODULE_DIR" ] || info "(The module creates that folder; run the command once it exists.)"
+info "All set. Start the module from this folder, then run: claude"
 echo
