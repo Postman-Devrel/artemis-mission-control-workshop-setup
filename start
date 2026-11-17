@@ -1,0 +1,169 @@
+#!/usr/bin/env bash
+# Workshop bootstrap: ./start <event-slug> <postman-api-key>
+#
+# 1. Exchanges your Postman API key for the workshop LLM gateway config (LiftOff claim API).
+# 2. Writes it to ~/.claude/settings.json (never to a shell export or a project file).
+# 3. Checks the gateway answers before going further.
+# 4. Logs the Postman CLI in with your API key.
+#
+# The Postman key and the gateway secret are never printed.
+set -euo pipefail
+umask 077
+
+# Base URL of the LiftOff app, including its base path, without a trailing slash.
+# Override with LIFTOFF_URL (e.g. for a staging deployment or a local test server).
+DEFAULT_LIFTOFF_URL="https://www.postman.com/liftoff"
+LIFTOFF_URL="${LIFTOFF_URL:-$DEFAULT_LIFTOFF_URL}"
+LIFTOFF_URL="${LIFTOFF_URL%/}"
+
+CLAIM_PATH="/api/workshop/claim/"
+VALIDATION_MODEL="claude-haiku-5-5"
+CLAIM_TIMEOUT=20       # seconds, claim call
+VALIDATION_TIMEOUT=40  # seconds, gateway test call
+MODULE_DIR="artemis-mission-control-agent"
+SETTINGS_FILE="${HOME}/.claude/settings.json"
+
+die() { printf '\n✗ %s\n' "$*" >&2; exit 1; }
+info() { printf '%s\n' "$*"; }
+
+for tool in curl jq; do
+  command -v "$tool" >/dev/null 2>&1 || die "Missing required tool: $tool"
+done
+
+WORK_DIR="$(mktemp -d)"
+cleanup() { rm -rf "$WORK_DIR"; unset POSTMAN_API_KEY CUSTOM_HEADERS 2>/dev/null || true; }
+trap cleanup EXIT
+
+# --- 1. Inputs ---------------------------------------------------------------
+EVENT="${1:-}"
+POSTMAN_API_KEY="${2:-}"
+
+if [ -z "$EVENT" ]; then
+  read -r -p "Workshop event (shown on the workshop page): " EVENT
+fi
+if [ -z "$POSTMAN_API_KEY" ]; then
+  info "Paste your Postman API key (nothing is displayed), then press Enter."
+  read -r -s -p "Postman API key: " POSTMAN_API_KEY
+  echo
+fi
+
+EVENT="$(printf '%s' "$EVENT" | tr -d '[:space:]')"
+POSTMAN_API_KEY="$(printf '%s' "$POSTMAN_API_KEY" | tr -d '[:space:]')"
+
+[[ "$EVENT" =~ ^[A-Za-z0-9][A-Za-z0-9_-]*$ ]] \
+  || die "That event name looks wrong. Copy the command again from the workshop page."
+[[ "$POSTMAN_API_KEY" =~ ^PMAK-[A-Za-z0-9_-]+$ ]] \
+  || die "That does not look like a Postman API key (it starts with PMAK-). Copy it again from postman.com > Settings > API keys."
+
+# curl reads its options from a config on stdin so secrets never appear in `ps`.
+curl_quote() { # quote a value as a curl config string (JSON string escaping is compatible)
+  case "$1" in *$'\n'* | *$'\r'*) die "Unexpected response from the server." ;; esac
+  jq -n --arg v "$1" '$v' | tr -d '\n'
+}
+
+# --- 2. Claim the gateway config ---------------------------------------------
+info "Contacting the workshop server..."
+CLAIM_BODY="$(jq -cn --arg event "$EVENT" --arg apiKey "$POSTMAN_API_KEY" '{event: $event, apiKey: $apiKey}')"
+claim_status="$(
+  {
+    printf 'url = %s\n' "$(curl_quote "${LIFTOFF_URL}${CLAIM_PATH}")"
+    printf 'header = "content-type: application/json"\n'
+    printf 'data = %s\n' "$(curl_quote "$CLAIM_BODY")"
+  } | curl -sS --fail-with-body --max-time "$CLAIM_TIMEOUT" --connect-timeout 10 \
+      -K - -o "$WORK_DIR/claim.json" -D "$WORK_DIR/claim.headers" -w '%{http_code}' 2>"$WORK_DIR/claim.err" || true
+)"
+unset CLAIM_BODY
+
+if [ "$claim_status" != "200" ]; then
+  code="$(jq -r '.code // empty' "$WORK_DIR/claim.json" 2>/dev/null || true)"
+  retry_after="$(awk 'tolower($1)=="retry-after:" {gsub("\r",""); print $2}' "$WORK_DIR/claim.headers" 2>/dev/null || true)"
+  case "${claim_status}:${code}" in
+    000:*) die "Could not reach the workshop server at ${LIFTOFF_URL}. Check your connection and try again. If it keeps failing, tell your instructor." ;;
+    400:*) die "The request was rejected as malformed. Copy the command again from the workshop page." ;;
+    401:*) die "Postman did not accept your API key. Generate a new one (postman.com > Settings > API keys), then run the command again." ;;
+    404:*) die "Unknown workshop \"$EVENT\". Copy the command again from the workshop page." ;;
+    403:event_closed) die "This workshop is not open. Ask your instructor." ;;
+    403:*) die "You are not registered for this workshop, or you reached the limit for it. Register on the workshop page first (with the same Postman API key), then run the command again." ;;
+    429:*) die "Too many attempts. Wait ${retry_after:-a minute} seconds and try again." ;;
+    502:*) die "The server could not reach Postman to check your key. Try again in a minute." ;;
+    5??:*) die "The workshop server hit an error. Try again, then tell your instructor if it persists." ;;
+    *) die "Unexpected answer from the workshop server (HTTP ${claim_status}). Tell your instructor." ;;
+  esac
+fi
+
+BASE_URL="$(jq -r '.baseUrl // empty' "$WORK_DIR/claim.json")"
+CUSTOM_HEADERS="$(jq -r '.customHeaders // empty' "$WORK_DIR/claim.json")"
+EVENT_NAME="$(jq -r '.eventName // empty' "$WORK_DIR/claim.json")"
+[ -n "$BASE_URL" ] && [ -n "$CUSTOM_HEADERS" ] || die "The server answer is incomplete. Tell your instructor."
+BASE_URL="${BASE_URL%/}"
+case "$BASE_URL" in
+  https://* | http://127.0.0.1* | http://localhost*) ;;
+  *) die "The server returned an unexpected gateway address. Tell your instructor." ;;
+esac
+info "✓ Registered for ${EVENT_NAME:-$EVENT}"
+
+# --- 3. Test the gateway before saving anything ------------------------------
+info "Testing the AI gateway (this can take a few seconds)..."
+VALIDATION_BODY="$(jq -cn --arg m "$VALIDATION_MODEL" '{model: $m, max_tokens: 8, messages: [{role: "user", content: "hi"}]}')"
+test_status="$(
+  {
+    printf 'url = %s\n' "$(curl_quote "${BASE_URL}/v1/messages")"
+    while IFS= read -r line; do
+      [ -n "$line" ] && printf 'header = %s\n' "$(curl_quote "$line")"
+    done <<<"${CUSTOM_HEADERS//\\n/$'\n'}"
+    printf 'header = "anthropic-version: 2023-06-01"\n'
+    printf 'header = "content-type: application/json"\n'
+    printf 'data = %s\n' "$(curl_quote "$VALIDATION_BODY")"
+  } | curl -sS --max-time "$VALIDATION_TIMEOUT" --connect-timeout 10 \
+      -K - -o "$WORK_DIR/test.json" -w '%{http_code}' 2>/dev/null || true
+)"
+case "$test_status" in
+  200) info "✓ The AI gateway answers" ;;
+  401 | 403) die "The AI gateway rejected the workshop credentials. Run ./start again; if it persists, tell your instructor (the key may be disabled or out of budget)." ;;
+  429) die "The AI gateway is rate limiting or out of budget. Wait a minute and try again, then tell your instructor if it persists." ;;
+  000) die "Could not reach the AI gateway. Check your connection and try again." ;;
+  *) die "The AI gateway test failed (HTTP ${test_status}). Tell your instructor." ;;
+esac
+
+# --- 4. Write ~/.claude/settings.json ----------------------------------------
+mkdir -p "$(dirname "$SETTINGS_FILE")"
+chmod 700 "$(dirname "$SETTINGS_FILE")" 2>/dev/null || true
+existing='{}'
+if [ -s "$SETTINGS_FILE" ]; then
+  jq -e 'type == "object"' "$SETTINGS_FILE" >/dev/null 2>&1 \
+    || die "${SETTINGS_FILE} is not valid JSON. Move it aside and run ./start again."
+  existing="$(cat "$SETTINGS_FILE")"
+fi
+printf '%s' "$existing" | jq \
+  --arg base "$BASE_URL" --arg headers "$CUSTOM_HEADERS" \
+  '.env = ((.env // {}) + {
+      ANTHROPIC_BASE_URL: $base,
+      ANTHROPIC_CUSTOM_HEADERS: $headers,
+      ANTHROPIC_AUTH_TOKEN: "dummy"
+    })' >"$WORK_DIR/settings.json"
+mv "$WORK_DIR/settings.json" "$SETTINGS_FILE"
+chmod 600 "$SETTINGS_FILE"
+unset CUSTOM_HEADERS
+info "✓ Claude Code configured (${SETTINGS_FILE})"
+
+# --- 5. Postman login --------------------------------------------------------
+if command -v postman >/dev/null 2>&1; then
+  if postman login --with-api-key "$POSTMAN_API_KEY" >"$WORK_DIR/login.out" 2>&1; then
+    info "✓ Postman CLI logged in"
+  else
+    unset POSTMAN_API_KEY
+    die "Postman login failed. Run ./start again; if it persists, tell your instructor."
+  fi
+else
+  unset POSTMAN_API_KEY
+  die "The Postman CLI is not installed in this environment. Tell your instructor."
+fi
+unset POSTMAN_API_KEY
+
+# --- 6. Next steps -----------------------------------------------------------
+echo
+info "All set. Start Claude Code from the module folder, not from the repo root:"
+echo
+info "    cd ${MODULE_DIR} && claude"
+[ -d "$MODULE_DIR" ] || info "(The module creates that folder; run the command once it exists.)"
+echo
