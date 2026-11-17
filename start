@@ -77,11 +77,16 @@ unset CLAIM_BODY
 if [ "$claim_status" != "200" ]; then
   code="$(jq -r '.code // empty' "$WORK_DIR/claim.json" 2>/dev/null || true)"
   retry_after="$(awk 'tolower($1)=="retry-after:" {gsub("\r",""); print $2}' "$WORK_DIR/claim.headers" 2>/dev/null || true)"
+  # Not our JSON API (CDN/HTML error page, proxy, protection): never show the raw body.
+  if [ "$claim_status" != "000" ] && [ -z "$code" ]; then
+    die "Unexpected response from the workshop server (HTTP ${claim_status}). Check the event name in the command, and that it was copied from the workshop page. If it persists, tell your instructor."
+  fi
   case "${claim_status}:${code}" in
     000:*) die "Could not reach the workshop server at ${LIFTOFF_URL}. Check your connection and try again. If it keeps failing, tell your instructor." ;;
     400:*) die "The request was rejected as malformed. Copy the command again from the workshop page." ;;
-    401:*) die "Postman did not accept your API key. Generate a new one (postman.com > Settings > API keys), then run the command again." ;;
-    404:*) die "Unknown workshop \"$EVENT\". Copy the command again from the workshop page." ;;
+    401:invalid_key) die "Postman did not accept your API key. Generate a new one (postman.com > Settings > API keys), then run the command again." ;;
+    401:*) die "The workshop server refused the request (HTTP 401). Tell your instructor." ;;
+    404:unknown_event) die "Unknown workshop \"$EVENT\". Copy the command again from the workshop page." ;;
     403:event_closed) die "This workshop is not open. Ask your instructor." ;;
     403:*) die "You are not registered for this workshop, or you reached the limit for it. Register on the workshop page first (with the same Postman API key), then run the command again." ;;
     429:*) die "Too many attempts. Wait ${retry_after:-a minute} seconds and try again." ;;
