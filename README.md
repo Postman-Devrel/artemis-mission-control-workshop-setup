@@ -88,7 +88,6 @@ Delete your codespace at https://github.com/codespaces.
 - **Postman says "not logged in":** run `./start` again.
 - **Validation says no workspace found:** you started `claude` from the wrong folder. Go back to the folder where you started the module and try again.
 
-
 ## Maintainers: the prebuilt image
 
 Codespaces prebuilds are not available on this organization's plan, so `.devcontainer/devcontainer.json` pulls a prebuilt image instead of building the Dockerfile for every participant:
