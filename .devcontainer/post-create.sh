@@ -3,12 +3,15 @@
 # Every step is non-fatal: a failure here must never abort codespace creation.
 set -u
 
-# Postman plugin for Claude Code, from Postman's own marketplace.
-if claude plugin marketplace add postmanlabs/postman-plugin \
-  && claude plugin install postman@postman; then
-  echo "Postman plugin installed"
-else
-  echo "Postman plugin install failed; run: claude plugin marketplace add postmanlabs/postman-plugin && claude plugin install postman@postman"
+# The Postman plugin for Claude Code is baked into the image (see Dockerfile).
+# Fallback only: install it if it is missing (e.g. an older image).
+if ! claude plugin list 2>/dev/null | grep -q postman; then
+  if claude plugin marketplace add postmanlabs/postman-plugin \
+    && claude plugin install postman@postman; then
+    echo "Postman plugin installed"
+  else
+    echo "Postman plugin install failed; run: claude plugin marketplace add postmanlabs/postman-plugin && claude plugin install postman@postman"
+  fi
 fi
 
 cat <<'BANNER'

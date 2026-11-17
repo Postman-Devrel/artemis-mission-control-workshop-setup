@@ -1,0 +1,71 @@
+name: Build workshop image
+
+# Builds .devcontainer/Dockerfile and publishes it to GitHub Container Registry.
+# Codespaces then pulls the image instead of rebuilding it for every participant.
+# (Codespaces prebuilds are not available on this org's plan.)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".devcontainer/**"
+      - ".github/workflows/build-image.yml"
+  workflow_dispatch:
+  schedule:
+    # Weekly rebuild (Monday 05:00 UTC) to pick up Postman CLI, Claude Code
+    # and base image updates.
+    - cron: "0 5 * * 1"
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: build-image
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/postman-devrel-workshops/artemis-mission-control-workshop-image
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Log in to ghcr.io
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute short SHA
+        id: vars
+        run: echo "sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      # `latest` is intentionally a moving tag: it is what devcontainer.json
+      # pulls. The Postman CLI and Claude Code are installed from their
+      # "latest"/"stable" channels, so a rebuild of the same commit can differ.
+      # The short-SHA tag identifies the exact build for rollbacks.
+      - name: Build and push
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .devcontainer
+          file: .devcontainer/Dockerfile
+          platforms: linux/amd64
+          pull: true
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ steps.vars.outputs.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
