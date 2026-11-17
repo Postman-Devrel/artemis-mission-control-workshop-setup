@@ -20,7 +20,6 @@ CLAIM_PATH="/api/workshop/claim/"
 VALIDATION_MODEL="claude-haiku-5-5"
 CLAIM_TIMEOUT=20       # seconds, claim call
 VALIDATION_TIMEOUT=40  # seconds, gateway test call
-MODULE_DIR="artemis-mission-control-agent"
 SETTINGS_FILE="${HOME}/.claude/settings.json"
 
 die() { printf '\n✗ %s\n' "$*" >&2; exit 1; }
@@ -165,10 +164,10 @@ else
 fi
 unset POSTMAN_API_KEY
 
-# --- 6. Next steps -----------------------------------------------------------
+# --- 6. Who is connected ------------------------------------------------------
 echo
-info "All set. Start Claude Code from the module folder, not from the repo root:"
+info "Connected to Postman as:"
+postman whoami 2>&1 || info "(could not read the Postman identity; run: postman whoami)"
 echo
-info "    cd ${MODULE_DIR} && claude"
-[ -d "$MODULE_DIR" ] || info "(The module creates that folder; run the command once it exists.)"
+info "All set. Start the module from this folder, then run: claude"
 echo
