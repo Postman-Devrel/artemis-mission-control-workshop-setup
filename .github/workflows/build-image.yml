@@ -6,7 +6,7 @@ name: Build workshop image
 
 on:
   push:
-    branches: [main, perf/prebuilt-image] # TEMP: perf/prebuilt-image to test PR #6; remove before merge
+    branches: [main]
     paths:
       - ".devcontainer/**"
       - ".github/workflows/build-image.yml"
@@ -47,14 +47,7 @@ jobs:
 
       - name: Compute short SHA
         id: vars
-        run: |
-          echo "sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
-          # TEMP: non-main refs only get a test tag and never touch `latest`.
-          if [ "$GITHUB_REF" = "refs/heads/main" ]; then
-            { echo 'tags<<EOF'; echo "$IMAGE:latest"; echo "$IMAGE:${GITHUB_SHA::7}"; echo 'EOF'; } >> "$GITHUB_OUTPUT"
-          else
-            { echo 'tags<<EOF'; echo "$IMAGE:test-${GITHUB_SHA::7}"; echo 'EOF'; } >> "$GITHUB_OUTPUT"
-          fi
+        run: echo "sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
 
       # `latest` is intentionally a moving tag: it is what devcontainer.json
       # pulls. The Postman CLI and Claude Code are installed from their
@@ -68,7 +61,9 @@ jobs:
           platforms: linux/amd64
           pull: true
           push: true
-          tags: ${{ steps.vars.outputs.tags }}
+          tags: |
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ steps.vars.outputs.sha }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
