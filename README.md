@@ -6,9 +6,9 @@ This page only covers launching and configuring your environment. After that, fo
 
 ## 1. Create your codespace
 
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/postman-devrel-workshops/artemis-mission-control-workshop-setup?quickstart=1)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/postman-devrel-workshops/agent-workshop-setup?quickstart=1)
 
-Open https://codespaces.new/postman-devrel-workshops/artemis-mission-control-workshop-setup?quickstart=1 and sign in with your GitHub account. You do not need an invitation. A 2-core machine is enough.
+Open https://codespaces.new/postman-devrel-workshops/agent-workshop-setup?quickstart=1 and sign in with your GitHub account. You do not need an invitation. A 2-core machine is enough.
 
 The codespace starts from a prebuilt image, so it is ready in about a minute. Wait until the terminal is ready.
 
