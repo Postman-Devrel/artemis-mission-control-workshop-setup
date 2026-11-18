@@ -50,7 +50,7 @@ The Postman plugin is already installed. If the module tells you to run `npx @po
 
 ## 5. Start the module
 
-Open the LiftOff module in your own browser, next to the codespace: [LiftOff module link]
+Open the LiftOff module in your own browser, next to the codespace: the **Open the module** button on the workshop page (or https://www.postman.com/liftoff/modules/artemis-mission-control-agent)
 
 Two tips for working in a codespace.
 

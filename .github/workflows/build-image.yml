@@ -49,6 +49,31 @@ jobs:
         id: vars
         run: echo "sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
 
+      # Build the image locally and smoke test it BEFORE pushing, so a broken
+      # weekly rebuild never replaces `latest`. The push step below reuses the
+      # layers from the cache.
+      - name: Build for the smoke test
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .devcontainer
+          file: .devcontainer/Dockerfile
+          platforms: linux/amd64
+          pull: true
+          load: true
+          tags: ${{ env.IMAGE }}:smoke-test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test the image
+        run: |
+          docker run --rm -u node "$IMAGE:smoke-test" bash -lc '
+            set -e
+            postman --version
+            claude --version
+            claude plugin list | tee /tmp/plugins.txt
+            grep -qi postman /tmp/plugins.txt
+          '
+
       # `latest` is intentionally a moving tag: it is what devcontainer.json
       # pulls. The Postman CLI and Claude Code are installed from their
       # "latest"/"stable" channels, so a rebuild of the same commit can differ.
