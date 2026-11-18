@@ -83,6 +83,7 @@ Delete your codespace at https://github.com/codespaces.
 ## Troubleshooting
 
 - **`./start` says you are not registered:** do step 2 first, with the same Postman API key, then run the command again.
+- **`./start` says you ran the command the maximum number of times:** the workshop limits how often one person can fetch the AI gateway access. Keep using your existing codespace, or ask your instructor if you need a new one.
 - **`./start` says the key was not accepted:** generate a new Postman API key, join the workshop again with it on the workshop page, and run the command with it.
 - **Claude hangs, then fails with 401:** run `./start` again. Do not type the gateway settings by hand: a single wrong character makes Claude retry silently before failing.
 - **Postman says "not logged in":** run `./start` again.

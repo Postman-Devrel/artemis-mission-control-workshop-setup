@@ -87,7 +87,9 @@ if [ "$claim_status" != "200" ]; then
     401:invalid_key) die "Postman did not accept your API key. Generate a new one (postman.com > Settings > API keys), then run the command again." ;;
     401:*) die "The workshop server refused the request (HTTP 401). Tell your instructor." ;;
     403:event_closed) die "This workshop is not open for registration, either not yet or no longer. Ask your instructor." ;;
-    403:*) die "You are not registered for this workshop, or you reached the limit for it. Register on the workshop page first (with the same Postman API key), then run the command again." ;;
+    403:not_registered) die "You are not registered for this workshop. Register on the workshop page first (with the same Postman API key), then run the command again." ;;
+    403:claim_limit) die "You already ran this command the maximum number of times for this workshop. Your existing codespace keeps working. If you need a new one, ask your instructor." ;;
+    403:*) die "You are not registered for this workshop, or you reached the limit for it. Register on the workshop page first (with the same Postman API key). If you already did, ask your instructor." ;;
     429:*) die "Too many attempts. Wait ${retry_after:-a minute} seconds and try again." ;;
     502:*) die "The server could not reach Postman to check your key. Try again in a minute." ;;
     5??:*) die "The workshop server hit an error. Try again, then tell your instructor if it persists." ;;
