@@ -1,6 +1,6 @@
 {
   "name": "Agent Workshop",
-  "image": "ghcr.io/postman-devrel-workshops/artemis-mission-control-workshop-image:latest",
+  "image": "ghcr.io/postman-devrel-workshops/agent-workshop-image:latest",
   "remoteUser": "node",
   "hostRequirements": {
     "cpus": 2
