@@ -92,19 +92,19 @@ Delete your codespace at https://github.com/codespaces.
 
 Codespaces prebuilds are not available on this organization's plan, so `.devcontainer/devcontainer.json` pulls a prebuilt image instead of building the Dockerfile for every participant:
 
-`ghcr.io/postman-devrel-workshops/artemis-mission-control-workshop-image:latest`
+`ghcr.io/postman-devrel-workshops/agent-workshop-image:latest`
 
 The image contains the Postman CLI, Claude Code and the Postman plugin for Claude Code (installed as the `node` user, in `/home/node/.claude`). `post-create.sh` only installs the plugin if it is missing, then prints the next-step banner.
 
 **Rebuilds.** The `Build workshop image` workflow (`.github/workflows/build-image.yml`) builds `.devcontainer/Dockerfile` and pushes two tags: `latest` and the 7-character commit SHA. It runs on pushes to `main` that touch `.devcontainer/**`, every Monday at 05:00 UTC, and on demand (Actions > Build workshop image > Run workflow). `latest` is a moving tag and the Postman CLI and Claude Code are installed from their latest/stable channels, so rebuilding the same commit can give a different image. To roll back, retag a previous SHA tag as `latest`, or point `devcontainer.json` at a SHA tag.
 
-**One-time setup.** After the first successful run, make the package public, otherwise participants without access to this repo cannot pull it: https://github.com/orgs/postman-devrel-workshops/packages/container/artemis-mission-control-workshop-image/settings > Danger Zone > Change visibility > Public. Also check that the package is linked to this repository.
+**One-time setup.** After the first successful run, make the package public, otherwise participants without access to this repo cannot pull it: https://github.com/orgs/postman-devrel-workshops/packages/container/agent-workshop-image/settings > Danger Zone > Change visibility > Public. Also check that the package is linked to this repository.
 
 **Testing a change.** Change the Dockerfile on a branch, then:
 
 ```bash
-docker build -t artemis-test .devcontainer
-docker run --rm -it -u node artemis-test bash -lc 'postman --version; claude --version; claude plugin list'
+docker build -t agent-workshop-test .devcontainer
+docker run --rm -it -u node agent-workshop-test bash -lc 'postman --version; claude --version; claude plugin list'
 ```
 
 To try it in a real codespace before merging, run the workflow manually on the branch (the `latest` tag is overwritten, so do this only when no workshop is running), or temporarily point `image` in `devcontainer.json` at your own test tag.
