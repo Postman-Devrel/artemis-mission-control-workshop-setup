@@ -25,7 +25,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  IMAGE: ghcr.io/postman-devrel-workshops/artemis-mission-control-workshop-image
+  IMAGE: ghcr.io/postman-devrel-workshops/agent-workshop-image
 
 jobs:
   build:
