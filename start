@@ -82,11 +82,11 @@ if [ "$claim_status" != "200" ]; then
   fi
   case "${claim_status}:${code}" in
     000:*) die "Could not reach the workshop server at ${LIFTOFF_URL}. Check your connection and try again. If it keeps failing, tell your instructor." ;;
+    400:unknown_event | 404:unknown_event) die "Unknown workshop \"$EVENT\". Copy the command again from the workshop page." ;;
     400:*) die "The request was rejected as malformed. Copy the command again from the workshop page." ;;
     401:invalid_key) die "Postman did not accept your API key. Generate a new one (postman.com > Settings > API keys), then run the command again." ;;
     401:*) die "The workshop server refused the request (HTTP 401). Tell your instructor." ;;
-    404:unknown_event) die "Unknown workshop \"$EVENT\". Copy the command again from the workshop page." ;;
-    403:event_closed) die "This workshop is not open. Ask your instructor." ;;
+    403:event_closed) die "This workshop is not open for registration, either not yet or no longer. Ask your instructor." ;;
     403:*) die "You are not registered for this workshop, or you reached the limit for it. Register on the workshop page first (with the same Postman API key), then run the command again." ;;
     429:*) die "Too many attempts. Wait ${retry_after:-a minute} seconds and try again." ;;
     502:*) die "The server could not reach Postman to check your key. Try again in a minute." ;;
