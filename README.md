@@ -20,13 +20,13 @@ The codespace starts from a prebuilt image, so it is ready in about a minute. Wa
 
 ## 3. Run the start command
 
-The workshop page shows a command that looks like this. Copy it from the page (the button copies your real key), paste it into the codespace terminal and press Enter:
+The workshop page shows two blocks, each with a copy button: a command, then your Postman API key (masked on screen, the button copies the real value). In the codespace terminal, paste the command and press Enter:
 
 ```bash
-./start <workshop> <your-postman-api-key>
+./start <workshop>
 ```
 
-It connects Claude Code to the workshop AI gateway, checks it works, and signs the Postman CLI in. If you run `./start` with no arguments, it asks for the two values; the key is hidden while you type.
+It asks for your Postman API key with hidden input: nothing appears while you paste. Paste the key from the second block and press Enter. The script connects Claude Code to the workshop AI gateway, checks it works, and signs the Postman CLI in. The key never appears in the terminal or in your shell history.
 
 Your Postman key is not stored by the workshop server. It only goes to Postman (to verify it) and to the Postman CLI in this codespace.
 
@@ -83,7 +83,7 @@ Delete your codespace at https://github.com/codespaces.
 ## Troubleshooting
 
 - **`./start` says you are not registered:** do step 2 first, with the same Postman API key, then run the command again.
-- **`./start` says the key was not accepted:** generate a new Postman API key and run the command with it.
+- **`./start` says the key was not accepted:** generate a new Postman API key, join the workshop again with it on the workshop page, and run the command with it.
 - **Claude hangs, then fails with 401:** run `./start` again. Do not type the gateway settings by hand: a single wrong character makes Claude retry silently before failing.
 - **Postman says "not logged in":** run `./start` again.
 - **Validation says no workspace found:** you started `claude` from the wrong folder. Go back to the folder where you started the module and try again.
