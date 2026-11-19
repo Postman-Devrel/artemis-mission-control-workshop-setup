@@ -18,6 +18,9 @@ LIFTOFF_URL="${LIFTOFF_URL%/}"
 
 CLAIM_PATH="/api/workshop/claim/"
 VALIDATION_MODEL="claude-haiku-5-5"
+# Default model of Claude Code. The workshop key only allows Sonnet and Haiku, so
+# it must not start on Opus. Override with WORKSHOP_DEFAULT_MODEL (alias or model id).
+DEFAULT_MODEL="${WORKSHOP_DEFAULT_MODEL:-sonnet}"
 CLAIM_TIMEOUT=20       # seconds, claim call
 VALIDATION_TIMEOUT=40  # seconds, gateway test call
 SETTINGS_FILE="${HOME}/.claude/settings.json"
@@ -141,8 +144,8 @@ if [ -s "$SETTINGS_FILE" ]; then
   existing="$(cat "$SETTINGS_FILE")"
 fi
 printf '%s' "$existing" | jq \
-  --arg base "$BASE_URL" --arg headers "$CUSTOM_HEADERS" \
-  '.env = ((.env // {}) + {
+  --arg base "$BASE_URL" --arg headers "$CUSTOM_HEADERS" --arg model "$DEFAULT_MODEL" \
+  '.model = $model | .env = ((.env // {}) + {
       ANTHROPIC_BASE_URL: $base,
       ANTHROPIC_CUSTOM_HEADERS: $headers,
       ANTHROPIC_AUTH_TOKEN: "dummy"
