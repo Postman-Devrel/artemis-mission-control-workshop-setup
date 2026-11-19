@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Sets up Claude Code and the Postman CLI for the workshop. Safe to run again.
+cd "$(dirname "$0")" || exit 1
+exec bash .devcontainer/configure.sh "$@"

@@ -8,9 +8,23 @@
     "cpus": 2
   },
   "containerEnv": {
-    "DISABLE_AUTOUPDATER": "1"
+    "DISABLE_AUTOUPDATER": "1",
+    "WORKSHOP_GATEWAY_URL": "https://postman-devrel-s-fabric-team.dp.fabricgateway.ai/anthropic"
+  },
+  "secrets": {
+    "WORKSHOP_KEY": {
+      "description": "Workshop key for Claude. Your instructor shares it at the start of the session.",
+      "documentationUrl": "https://github.com/postman-devrel-workshops/artemis-mission-control-workshop-setup#1-create-your-codespace"
+    },
+    "POSTMAN_API_KEY": {
+      "description": "Your own Postman API key (starts with PMAK-). Generate one at https://go.postman.co/settings/me/api-keys",
+      "documentationUrl": "https://go.postman.co/settings/me/api-keys"
+    }
   },
   "customizations": {
+    "codespaces": {
+      "openFiles": ["README.md"]
+    },
     "vscode": {
       "extensions": [
         "ms-vscode.live-server"
@@ -20,5 +34,6 @@
       }
     }
   },
-  "postCreateCommand": "bash .devcontainer/post-create.sh"
+  "onCreateCommand": "bash .devcontainer/on-create.sh",
+  "postCreateCommand": "bash .devcontainer/configure.sh --auto"
 }
